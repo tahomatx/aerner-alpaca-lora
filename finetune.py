@@ -46,6 +46,7 @@ def train(
     # llm hyperparams
     train_on_inputs: bool = True,  # if False, masks out inputs in loss
     group_by_length: bool = True,  # faster, but produces an odd training loss curve
+    save_total_limit: int = 4,
 ):
     print(
         f"Training Alpaca-LoRA model with params:\n"
@@ -165,32 +166,11 @@ def train(
         train_dataset=dataset["train"],
         eval_dataset=dataset["test"],
         args=transformers.TrainingArguments(
-            # per_device_train_batch_size=micro_batch_size,
-            # gradient_accumulation_steps=gradient_accumulation_steps,
-            # warmup_steps=100,
-            # num_train_epochs=num_epochs,
-            # learning_rate=learning_rate,
-            # fp16=True,
-            # logging_steps=10,
-            # evaluation_strategy="steps" if val_set_size > 0 else "no",
-            # save_strategy="steps",
-            # eval_steps=200 if val_set_size > 0 else None,
-            # save_steps=200,
-            # output_dir=output_dir,
-            # save_total_limit=3,
-            # load_best_model_at_end=True if val_set_size > 0 else False,
-            # ddp_find_unused_parameters=False if ddp else None,
-            # group_by_length=group_by_length,
-
-
-            #
-            # May success?
-            #
             output_dir=output_dir,
             report_to="wandb",
 
             fp16=True,
-            load_best_model_at_end=True,
+            load_best_model_at_end=True if val_set_size > 0 else False,
             ddp_find_unused_parameters=False if ddp else None,
 
             # per_device_train_batch_size=128,
@@ -199,20 +179,21 @@ def train(
             per_device_train_batch_size=micro_batch_size,
             gradient_accumulation_steps=gradient_accumulation_steps,
 
-            num_train_epochs=3,
+            num_train_epochs=num_epochs,
 
             logging_strategy="steps",
             logging_steps=10,
 
-            evaluation_strategy="steps",
-            eval_steps=100,
+            evaluation_strategy="steps" if val_set_size > 0 else "no",
+            eval_steps=200 if val_set_size > 0 else None,
 
             save_strategy="steps",
             save_steps=200,
-            save_total_limit=6,
+            save_total_limit=save_total_limit,
 
             warmup_steps=100,
-            learning_rate=3e-4,  # the Karpathy constant
+            learning_rate=learning_rate,  # the Karpathy constant
+            # group_by_length=group_by_length,
         ),
         data_collator=transformers.DataCollatorForSeq2Seq(
             tokenizer, pad_to_multiple_of=8, return_tensors="pt", padding=True
