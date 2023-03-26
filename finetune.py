@@ -250,7 +250,7 @@ def train(
     #
 
     dataloader = RepeatingLoader(torch.utils.data.DataLoader(
-        DatasetDataset(dataset),
+        DatasetDataset(data["train"]),
         batch_size=micro_batch_size,
         shuffle=True
     ))
