@@ -189,11 +189,16 @@ def train(
     #
     #
 
+    class StrictTrainingArguments(transformers.TrainingArguments):
+        @property
+        def place_model_on_device(self):
+            return False
+
     trainer = transformers.Trainer(
         model=model,
         train_dataset=dataset["train"],
         eval_dataset=dataset["test"],
-        args=transformers.TrainingArguments(
+        args=StrictTrainingArguments(
             output_dir=output_dir,
             report_to="wandb",
 
