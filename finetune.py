@@ -203,10 +203,12 @@ def train(
         def place_model_on_device(self):
             return False
 
+    print(model.base_model.model.model.embed_tokens.weight.device)
+
     trainer = transformers.Trainer(
         model=model,
-        train_dataset=dataset["train"],
-        eval_dataset=dataset["test"],
+        train_dataset=dataset["train"].to(model.base_model.model.model.embed_tokens.weight.device),
+        eval_dataset=dataset["test"].to(model.base_model.model.model.embed_tokens.weight.device),
         args=StrictTrainingArguments(
             output_dir=output_dir,
             report_to="wandb",
@@ -241,7 +243,6 @@ def train(
             tokenizer, pad_to_multiple_of=8, return_tensors="pt", padding=True
         ),
     )
-    model.config.use_cache = False
 
     old_state_dict = model.state_dict
     model.state_dict = (
