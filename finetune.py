@@ -30,7 +30,7 @@ def train(
     dataset_uri: str = "./aerner-guanaco-v1-512",
     # training hyperparams
     batch_size: int = 128,
-    micro_batch_size: int = 4,
+    micro_batch_size: int = 1,
     num_epochs: int = 3,
     learning_rate: float = 3e-4,
     cutoff_len: int = 512,
@@ -193,7 +193,7 @@ def train(
 
             # per_device_train_batch_size=128,
             # per_device_eval_batch_size=128,
-            auto_find_batch_size=True,
+            # auto_find_batch_size=True,
             per_device_train_batch_size=micro_batch_size,
             gradient_accumulation_steps=gradient_accumulation_steps,
 
