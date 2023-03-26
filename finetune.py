@@ -234,7 +234,7 @@ def train(
     # dataset = dataset.remove_columns(["instruction", "input", "output"])
 
     data = load_dataset("json", data_files=data_path)
-    data = data["train"].map(generate_and_tokenize_prompt)
+    data = data.map(generate_and_tokenize_prompt)
     data = data.remove_columns(["instruction", "input", "output"])
     dataset = data.train_test_split(
         test_size=val_set_size, shuffle=True, seed=0)
