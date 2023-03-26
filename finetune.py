@@ -147,6 +147,12 @@ def train(
     dataset = dataset.remove_columns(["instruction", "input", "output"])
 
     #
+    # Initial save
+    #
+    model.save_pretrained(output_dir)
+
+
+    #
     #
     # Trainer
     #
