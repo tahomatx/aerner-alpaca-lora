@@ -169,7 +169,13 @@ def train(
     model.lm_head.to(torch.float16)
     # silence the warnings. Please re-enable for inference!
     model.config.use_cache = False
+    model = prepare_model_for_int8_training(model)
 
+    #
+    #
+    # Tokenizer
+    #
+    #
     tokenizer = LlamaTokenizer.from_pretrained(base_model)
 
     tokenizer.pad_token_id = 0  # unk. we want this to be different from the eos token
@@ -212,8 +218,6 @@ def train(
             ]  # could be sped up, probably
         return tokenized_full_prompt
 
-    model = prepare_model_for_int8_training(model)
-
     config = LoraConfig(
         r=lora_r,
         lora_alpha=lora_alpha,
@@ -236,7 +240,7 @@ def train(
     data = load_dataset("json", data_files=data_path)
     data = data.map(generate_and_tokenize_prompt)
     data = data.remove_columns(["instruction", "input", "output"])
-    dataset = data.train_test_split(
+    dataset = data["train"].train_test_split(
         test_size=val_set_size, shuffle=True, seed=0)
 
     #
