@@ -1,3 +1,10 @@
+from peft import (
+    prepare_model_for_int8_training,
+    LoraConfig,
+    get_peft_model,
+    get_peft_model_state_dict,
+)
+from transformers import LlamaForCausalLM, LlamaTokenizer
 import os
 import sys
 from typing import List
@@ -8,17 +15,11 @@ import torch.nn as nn
 import bitsandbytes as bnb
 from datasets import load_dataset
 import transformers
+import datasets
 
 assert (
     "LlamaTokenizer" in transformers._import_structure["models.llama"]
 ), "LLaMA is now in HuggingFace's main branch.\nPlease reinstall it: pip uninstall transformers && pip install git+https://github.com/huggingface/transformers.git"
-from transformers import LlamaForCausalLM, LlamaTokenizer
-from peft import (
-    prepare_model_for_int8_training,
-    LoraConfig,
-    get_peft_model,
-    get_peft_model_state_dict,
-)
 
 
 def train(
@@ -26,6 +27,7 @@ def train(
     base_model: str = "",  # the only required argument
     data_path: str = "./alpaca_data_cleaned.json",
     output_dir: str = "./lora-alpaca",
+    dataset_uri: str = "./aerner-guanaco-v1-512",
     # training hyperparams
     batch_size: int = 128,
     micro_batch_size: int = 4,
@@ -135,22 +137,24 @@ def train(
     )
     model = get_peft_model(model, config)
 
-    data = load_dataset("json", data_files=data_path)
+    #
+    #
+    # Dataset
+    #
+    #
+    dataset = datasets.load_from_disk(dataset_uri).train_test_split(
+        test_size=val_set_size, seed=0)
+    dataset = dataset.remove_columns(["instruction", "input", "output"])
 
-    if val_set_size > 0:
-        train_val = data["train"].train_test_split(
-            test_size=val_set_size, shuffle=True, seed=42
-        )
-        train_data = train_val["train"].shuffle().map(generate_and_tokenize_prompt)
-        val_data = train_val["test"].shuffle().map(generate_and_tokenize_prompt)
-    else:
-        train_data = data["train"].shuffle().map(generate_and_tokenize_prompt)
-        val_data = None
-
+    #
+    #
+    # Trainer
+    #
+    #
     trainer = transformers.Trainer(
         model=model,
-        train_dataset=train_data,
-        eval_dataset=val_data,
+        train_dataset=dataset["train"],
+        eval_dataset=dataset["test"],
         args=transformers.TrainingArguments(
             per_device_train_batch_size=micro_batch_size,
             gradient_accumulation_steps=gradient_accumulation_steps,
@@ -177,7 +181,8 @@ def train(
 
     old_state_dict = model.state_dict
     model.state_dict = (
-        lambda self, *_, **__: get_peft_model_state_dict(self, old_state_dict())
+        lambda self, *
+        _, **__: get_peft_model_state_dict(self, old_state_dict())
     ).__get__(model, type(model))
 
     if torch.__version__ >= "2" and sys.platform != "win32":
