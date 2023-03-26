@@ -163,22 +163,54 @@ def train(
         train_dataset=dataset["train"],
         eval_dataset=dataset["test"],
         args=transformers.TrainingArguments(
+            # per_device_train_batch_size=micro_batch_size,
+            # gradient_accumulation_steps=gradient_accumulation_steps,
+            # warmup_steps=100,
+            # num_train_epochs=num_epochs,
+            # learning_rate=learning_rate,
+            # fp16=True,
+            # logging_steps=10,
+            # evaluation_strategy="steps" if val_set_size > 0 else "no",
+            # save_strategy="steps",
+            # eval_steps=200 if val_set_size > 0 else None,
+            # save_steps=200,
+            # output_dir=output_dir,
+            # save_total_limit=3,
+            # load_best_model_at_end=True if val_set_size > 0 else False,
+            # ddp_find_unused_parameters=False if ddp else None,
+            # group_by_length=group_by_length,
+
+
+            #
+            # May success?
+            #
+            output_dir=output_dir,
+            report_to="wandb",
+
+            fp16=True,
+            load_best_model_at_end=True,
+            ddp_find_unused_parameters=False if ddp else None,
+
+            # per_device_train_batch_size=128,
+            # per_device_eval_batch_size=128,
+            auto_find_batch_size=True,
             per_device_train_batch_size=micro_batch_size,
             gradient_accumulation_steps=gradient_accumulation_steps,
-            warmup_steps=100,
-            num_train_epochs=num_epochs,
-            learning_rate=learning_rate,
-            fp16=True,
+
+            num_train_epochs=3,
+
+            logging_strategy="steps",
             logging_steps=10,
-            evaluation_strategy="steps" if val_set_size > 0 else "no",
+
+            evaluation_strategy="steps",
+            eval_steps=100,
+
             save_strategy="steps",
-            eval_steps=200 if val_set_size > 0 else None,
             save_steps=200,
-            output_dir=output_dir,
-            save_total_limit=3,
-            load_best_model_at_end=True if val_set_size > 0 else False,
-            ddp_find_unused_parameters=False if ddp else None,
-            group_by_length=group_by_length,
+            save_total_limit=6,
+
+            warmup_steps=100,
+            learning_rate=3e-4,  # the Karpathy constant
         ),
         data_collator=transformers.DataCollatorForSeq2Seq(
             tokenizer, pad_to_multiple_of=8, return_tensors="pt", padding=True
