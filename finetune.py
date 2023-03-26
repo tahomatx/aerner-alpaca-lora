@@ -4,7 +4,7 @@ from peft import (
     get_peft_model,
     get_peft_model_state_dict,
 )
-from transformers import LlamaForCausalLM, LlamaTokenizer
+from transformers import AutoConfig, LlamaForCausalLM, LlamaTokenizer
 import os
 import sys
 from typing import List
@@ -16,6 +16,7 @@ import bitsandbytes as bnb
 from datasets import load_dataset
 import transformers
 import datasets
+import math
 
 assert (
     "LlamaTokenizer" in transformers._import_structure["models.llama"]
@@ -71,6 +72,9 @@ def train(
     ), "Please specify a --base_model, e.g. --base_model='decapoda-research/llama-7b-hf'"
     gradient_accumulation_steps = batch_size // micro_batch_size
 
+    #
+    #
+    #
     device_map = "auto"
     world_size = int(os.environ.get("WORLD_SIZE", 1))
     ddp = world_size != 1
@@ -78,6 +82,25 @@ def train(
         device_map = {"": int(os.environ.get("LOCAL_RANK") or 0)}
         gradient_accumulation_steps = gradient_accumulation_steps // world_size
 
+    #
+    # device_map
+    #
+    config = AutoConfig.from_pretrained(base_model)
+    device_ids = list(range(torch.cuda.device_count()))
+    device_map = {
+        "model.embed_tokens": device_ids[0],
+        "model.norm.weight": device_ids[-1],
+        "lm_head": device_ids[-1],
+    }
+    allocations = [
+        device_ids[i] for i in
+        sorted(list(range(len(device_ids))) *
+               math.ceil(config.num_hidden_layers / len(device_ids)))
+    ]
+    for layer_i, device_id in enumerate(allocations):
+        device_map[f"model.layers.{layer_i}"] = device_id
+
+    print(device_ids)
     print(device_map)
 
     model = LlamaForCausalLM.from_pretrained(
@@ -165,6 +188,7 @@ def train(
     # Trainer
     #
     #
+
     trainer = transformers.Trainer(
         model=model,
         train_dataset=dataset["train"],
