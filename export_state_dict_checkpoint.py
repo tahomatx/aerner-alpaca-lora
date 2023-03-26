@@ -13,18 +13,6 @@ assert (
 ), "LLaMA is now in HuggingFace's main branch.\nPlease reinstall it: pip uninstall transformers && pip install git+https://github.com/huggingface/transformers.git"
 
 
-def permute(w):
-    return (
-        w.view(n_heads, dim // n_heads // 2, 2,
-               dim).transpose(1, 2).reshape(dim, dim)
-    )
-
-
-def unpermute(w):
-    return (
-        w.view(n_heads, 2, dim // n_heads // 2,
-               dim).transpose(1, 2).reshape(dim, dim)
-    )
 
 
 def translate_state_dict_key(k):
@@ -108,6 +96,21 @@ def convert(
     base = 10000.0
     inv_freq = 1.0 / \
         (base ** (torch.arange(0, dims_per_head, 2).float() / dims_per_head))
+
+
+
+    def permute(w):
+        return (
+            w.view(n_heads, dim // n_heads // 2, 2,
+                dim).transpose(1, 2).reshape(dim, dim)
+        )
+
+
+    def unpermute(w):
+        return (
+            w.view(n_heads, 2, dim // n_heads // 2,
+                dim).transpose(1, 2).reshape(dim, dim)
+        )
 
     new_state_dict = {}
     for k, v in lora_model_sd.items():
