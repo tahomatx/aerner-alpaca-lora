@@ -203,12 +203,10 @@ def train(
         def place_model_on_device(self):
             return False
 
-    print(model.base_model.model.model.embed_tokens.weight.device)
-
     trainer = transformers.Trainer(
         model=model,
-        train_dataset=dataset["train"].to(model.base_model.model.model.embed_tokens.weight.device),
-        eval_dataset=dataset["test"].to(model.base_model.model.model.embed_tokens.weight.device),
+        train_dataset=dataset["train"].to("cuda:0"),
+        eval_dataset=dataset["test"].to("cuda:0"),
         args=StrictTrainingArguments(
             output_dir=output_dir,
             report_to="wandb",
