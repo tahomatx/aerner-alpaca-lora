@@ -205,8 +205,8 @@ def train(
 
     trainer = transformers.Trainer(
         model=model,
-        train_dataset=dataset["train"].to("cuda:0"),
-        eval_dataset=dataset["test"].to("cuda:0"),
+        train_dataset=dataset["train"],
+        eval_dataset=dataset["test"],
         args=StrictTrainingArguments(
             output_dir=output_dir,
             report_to="wandb",
