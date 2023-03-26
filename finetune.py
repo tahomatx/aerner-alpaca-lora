@@ -110,6 +110,15 @@ def train(
         device_map=device_map,
     )
 
+    model.gradient_checkpointing_enable()
+    model.enable_input_require_grads()
+    model.lm_head.to(torch.float16)
+    # silence the warnings. Please re-enable for inference!
+    model.config.use_cache = False
+
+
+
+
     tokenizer = LlamaTokenizer.from_pretrained(base_model)
 
     tokenizer.pad_token_id = 0  # unk. we want this to be different from the eos token
