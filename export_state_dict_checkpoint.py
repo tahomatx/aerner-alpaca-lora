@@ -98,6 +98,9 @@ def convert(
         (base ** (torch.arange(0, dims_per_head, 2).float() / dims_per_head))
 
 
+    print(params, dim, n_heads)
+
+
 
     def permute(w):
         return (
