@@ -5,6 +5,7 @@ import json
 import torch
 from peft import PeftModel, LoraConfig
 
+import fire
 import transformers
 
 assert (
@@ -123,3 +124,6 @@ def convert(
 
     with open("{}/params.json".format(prefix), "w") as f:
         json.dump(params, f)
+
+if __name__ == "__main__":
+    fire.Fire(convert)
