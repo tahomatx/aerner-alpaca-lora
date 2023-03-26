@@ -1,4 +1,4 @@
-from transformers import LlamaTokenizer, LlamaForCausalLM
+from transformers import AutoConfig, LlamaForCausalLM, LlamaTokenizer
 import os
 import json
 
@@ -81,13 +81,13 @@ def convert(
 
     lora_model_sd = lora_model.state_dict()
 
+    config = AutoConfig.from_pretrained(base_model_id)
     params = {
-        "dim": 4096,
-        "multiple_of": 256,
-        "n_heads": 32,
-        "n_layers": 32,
-        "norm_eps": 1e-06,
-        "vocab_size": -1,
+        "dim": config.hidden_size,
+        "n_heads": config.num_attention_heads,
+        "n_layers": config.num_hidden_layers,
+        "norm_eps": config.rms_norm_eps,
+        "vocab_size": config.vocab_size,
     }
     n_layers = params["n_layers"]
     n_heads = params["n_heads"]
