@@ -150,6 +150,7 @@ def train(
     # Initial save
     #
     model.save_pretrained(output_dir)
+    print("Saved initial model")
 
 
     #
@@ -194,6 +195,7 @@ def train(
     if torch.__version__ >= "2" and sys.platform != "win32":
         model = torch.compile(model)
 
+    print("Starting training")
     trainer.train()
 
     model.save_pretrained(output_dir)

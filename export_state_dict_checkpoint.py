@@ -1,3 +1,4 @@
+from transformers import LlamaTokenizer, LlamaForCausalLM
 import os
 import json
 
@@ -9,63 +10,19 @@ import transformers
 assert (
     "LlamaTokenizer" in transformers._import_structure["models.llama"]
 ), "LLaMA is now in HuggingFace's main branch.\nPlease reinstall it: pip uninstall transformers && pip install git+https://github.com/huggingface/transformers.git"
-from transformers import LlamaTokenizer, LlamaForCausalLM
-
-BASE_MODEL = None
-assert (
-    BASE_MODEL
-), "Please specify a BASE_MODEL in the script, e.g. 'decapoda-research/llama-7b-hf'"
-
-tokenizer = LlamaTokenizer.from_pretrained(BASE_MODEL)
-
-base_model = LlamaForCausalLM.from_pretrained(
-    BASE_MODEL,
-    load_in_8bit=False,
-    torch_dtype=torch.float16,
-    device_map={"": "cpu"},
-)
-
-lora_model = PeftModel.from_pretrained(
-    base_model,
-    "tloen/alpaca-lora-7b",
-    device_map={"": "cpu"},
-    torch_dtype=torch.float16,
-)
-
-# merge weights
-for layer in lora_model.base_model.model.model.layers:
-    layer.self_attn.q_proj.merge_weights = True
-    layer.self_attn.v_proj.merge_weights = True
-
-lora_model.train(False)
-
-lora_model_sd = lora_model.state_dict()
-
-params = {
-    "dim": 4096,
-    "multiple_of": 256,
-    "n_heads": 32,
-    "n_layers": 32,
-    "norm_eps": 1e-06,
-    "vocab_size": -1,
-}
-n_layers = params["n_layers"]
-n_heads = params["n_heads"]
-dim = params["dim"]
-dims_per_head = dim // n_heads
-base = 10000.0
-inv_freq = 1.0 / (base ** (torch.arange(0, dims_per_head, 2).float() / dims_per_head))
 
 
 def permute(w):
     return (
-        w.view(n_heads, dim // n_heads // 2, 2, dim).transpose(1, 2).reshape(dim, dim)
+        w.view(n_heads, dim // n_heads // 2, 2,
+               dim).transpose(1, 2).reshape(dim, dim)
     )
 
 
 def unpermute(w):
     return (
-        w.view(n_heads, 2, dim // n_heads // 2, dim).transpose(1, 2).reshape(dim, dim)
+        w.view(n_heads, 2, dim // n_heads // 2,
+               dim).transpose(1, 2).reshape(dim, dim)
     )
 
 
@@ -107,18 +64,62 @@ def translate_state_dict_key(k):
         raise NotImplementedError
 
 
-new_state_dict = {}
-for k, v in lora_model_sd.items():
-    new_k = translate_state_dict_key(k)
-    if new_k is not None:
-        if "wq" in new_k or "wk" in new_k:
-            new_state_dict[new_k] = unpermute(v)
-        else:
-            new_state_dict[new_k] = v
+def convert(
+        base_model_id: str = "decapoda-research/llama-7b-hf",
+        lora_model_id: str = "tloen/alpaca-lora-7b",
+        prefix: str = "./ckpt",
+):
+    base_model = LlamaForCausalLM.from_pretrained(
+        base_model_id,
+        load_in_8bit=False,
+        torch_dtype=torch.float16,
+        device_map={"": "cpu"},
+    )
 
-os.makedirs("./ckpt", exist_ok=True)
+    lora_model = PeftModel.from_pretrained(
+        base_model,
+        lora_model_id,
+        device_map={"": "cpu"},
+        torch_dtype=torch.float16,
+    )
 
-torch.save(new_state_dict, "./ckpt/consolidated.00.pth")
+    # merge weights
+    for layer in lora_model.base_model.model.model.layers:
+        layer.self_attn.q_proj.merge_weights = True
+        layer.self_attn.v_proj.merge_weights = True
 
-with open("./ckpt/params.json", "w") as f:
-    json.dump(params, f)
+    lora_model.train(False)
+
+    lora_model_sd = lora_model.state_dict()
+
+    params = {
+        "dim": 4096,
+        "multiple_of": 256,
+        "n_heads": 32,
+        "n_layers": 32,
+        "norm_eps": 1e-06,
+        "vocab_size": -1,
+    }
+    n_layers = params["n_layers"]
+    n_heads = params["n_heads"]
+    dim = params["dim"]
+    dims_per_head = dim // n_heads
+    base = 10000.0
+    inv_freq = 1.0 / \
+        (base ** (torch.arange(0, dims_per_head, 2).float() / dims_per_head))
+
+    new_state_dict = {}
+    for k, v in lora_model_sd.items():
+        new_k = translate_state_dict_key(k)
+        if new_k is not None:
+            if "wq" in new_k or "wk" in new_k:
+                new_state_dict[new_k] = unpermute(v)
+            else:
+                new_state_dict[new_k] = v
+
+    os.makedirs(prefix, exist_ok=True)
+
+    torch.save(new_state_dict, "{}/consolidated.00.pth".format(prefix))
+
+    with open("{}/params.json".format(prefix), "w") as f:
+        json.dump(params, f)
