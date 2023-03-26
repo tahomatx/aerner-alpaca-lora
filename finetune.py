@@ -157,6 +157,11 @@ def train(
     print(device_ids)
     print(device_map)
 
+    #
+    #
+    # Model
+    #
+    #
     model = LlamaForCausalLM.from_pretrained(
         base_model,
         load_in_8bit=True,
@@ -170,6 +175,21 @@ def train(
     # silence the warnings. Please re-enable for inference!
     model.config.use_cache = False
     model = prepare_model_for_int8_training(model)
+
+    #
+    #
+    # Apply LoRA
+    #
+    #
+    config = LoraConfig(
+        r=lora_r,
+        lora_alpha=lora_alpha,
+        target_modules=lora_target_modules,
+        lora_dropout=lora_dropout,
+        bias="none",
+        task_type="CAUSAL_LM",
+    )
+    model = get_peft_model(model, config)
 
     #
     #
@@ -217,16 +237,6 @@ def train(
                 user_prompt_len:
             ]  # could be sped up, probably
         return tokenized_full_prompt
-
-    config = LoraConfig(
-        r=lora_r,
-        lora_alpha=lora_alpha,
-        target_modules=lora_target_modules,
-        lora_dropout=lora_dropout,
-        bias="none",
-        task_type="CAUSAL_LM",
-    )
-    model = get_peft_model(model, config)
 
     #
     #
