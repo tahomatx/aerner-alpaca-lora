@@ -146,9 +146,13 @@ def train(
     # Dataset
     #
     #
-    dataset = datasets.load_from_disk(dataset_uri).train_test_split(
-        test_size=val_set_size, seed=0)
-    dataset = dataset.remove_columns(["instruction", "input", "output"])
+    # dataset = datasets.load_from_disk(dataset_uri).train_test_split(
+    #     test_size=val_set_size, seed=0)
+    # dataset = dataset.remove_columns(["instruction", "input", "output"])
+
+    data = load_dataset("json", data_files=data_path)
+    dataset = data["train"].map(generate_and_tokenize_prompt).train_test_split(
+        test_size=val_set_size, shuffle=True, seed=0)
 
     #
     # Initial save
