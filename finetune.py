@@ -479,10 +479,10 @@ def train(
                         return loss
 
                     xm.optimizer_step = patched_optimizer_step
-            elif is_sagemaker_dp_enabled():
-                model = nn.parallel.DistributedDataParallel(
-                    model, device_ids=[int(os.getenv("SMDATAPARALLEL_LOCAL_RANK"))]
-                )
+            # elif is_sagemaker_dp_enabled():
+            #     model = nn.parallel.DistributedDataParallel(
+            #         model, device_ids=[int(os.getenv("SMDATAPARALLEL_LOCAL_RANK"))]
+            #     )
             elif self.args.local_rank != -1:
                 kwargs = {}
                 if self.args.ddp_find_unused_parameters is not None:
