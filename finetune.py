@@ -355,6 +355,7 @@ def train(
             if self.args.past_index >= 0:
                 self._past = outputs[self.args.past_index]
 
+            labels = inputs['labels']
             if labels is not None:
                 if unwrap_model(model)._get_name() in MODEL_FOR_CAUSAL_LM_MAPPING_NAMES.values():
                     loss = self.label_smoother(outputs, labels, shift_labels=True)
