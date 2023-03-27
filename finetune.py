@@ -389,20 +389,20 @@ def train(
             # if self.args.n_gpu > 1:
             #     loss = loss.mean()  # mean() to average on multi-gpu parallel training
 
-            # if self.args.gradient_accumulation_steps > 1 and not self.deepspeed:
-            #     # deepspeed handles loss scaling by gradient_accumulation_steps in its `backward`
-            #     loss = loss / self.args.gradient_accumulation_steps
+            if self.args.gradient_accumulation_steps > 1 and not self.deepspeed:
+                # deepspeed handles loss scaling by gradient_accumulation_steps in its `backward`
+                loss = loss / self.args.gradient_accumulation_steps
 
-            # if self.do_grad_scaling:
-            #     self.scaler.scale(loss).backward()
+            if self.do_grad_scaling:
+                self.scaler.scale(loss).backward()
             # elif self.use_apex:
             #     with amp.scale_loss(loss, self.optimizer) as scaled_loss:
             #         scaled_loss.backward()
             # elif self.deepspeed:
             #     # loss gets scaled under gradient_accumulation_steps in deepspeed
             #     loss = self.deepspeed.backward(loss)
-            # else:
-            loss.backward()
+            else:
+                loss.backward()
 
             return loss.detach()
 
