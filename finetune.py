@@ -327,7 +327,9 @@ def train(
                 labels = inputs.pop("labels")
             else:
                 labels = None
-            outputs = model(**inputs)
+
+            print(inputs)
+            outputs = model(**inputs.to("cuda:0"))
             # Save past state if it exists
             # TODO: this needs to be fixed and made cleaner later.
             if self.args.past_index >= 0:
