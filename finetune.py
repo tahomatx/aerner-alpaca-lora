@@ -317,6 +317,9 @@ def train(
         def compute_loss(self, model, inputs, return_outputs=False):
             return torch.tensor([1, 0.5, 0.3])
 
+        def training_step(self, batch, batch_idx):
+            return torch.tensor([1, 0.5, 0.3])
+
     trainer = BetterTrainer(
         model=model,
         train_dataset=dataset["train"],
