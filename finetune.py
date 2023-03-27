@@ -302,11 +302,8 @@ def train(
     # Dataset
     #
     #
-    # dataset = datasets.load_from_disk(dataset_uri).train_test_split(
-    #     test_size=val_set_size, seed=0)
-    # dataset = dataset.remove_columns(["instruction", "input", "output"])
-
-    data = load_dataset("json", data_files=data_path)
+    # data = load_dataset("json", data_files=data_path)
+    data = load_dataset("JosephusCheung/GuanacoDataset")
     data = data.map(generate_and_tokenize_prompt)
     data = data.remove_columns(["instruction", "input", "output"])
     dataset = data["train"].train_test_split(
