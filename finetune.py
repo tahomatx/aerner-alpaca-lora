@@ -315,7 +315,7 @@ def train(
 
     class BetterTrainer(transformers.Trainer):
         def compute_loss(self, model, inputs, return_outputs=False):
-            pass
+            return torch.tensor([1, 0.5, 0.3])
 
     trainer = BetterTrainer(
         model=model,
