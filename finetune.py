@@ -370,7 +370,7 @@ def train(
 
             return loss.detach()
 
-    trainer = BetterTrainer(
+    trainer = transformers.TrainingArguments(
         model=model,
         train_dataset=dataset["train"],
         eval_dataset=dataset["test"],
