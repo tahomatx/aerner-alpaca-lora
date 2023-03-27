@@ -77,6 +77,7 @@ def model_forward(model, inputs):
     h = model.base_model.model.lm_head(h)
     return h
 
+
 class BetterTrainer(transformers.Trainer):
     def _wrap_model(self, model, training=True, dataloader=None):
         if not training:
@@ -102,7 +103,7 @@ class BetterTrainer(transformers.Trainer):
             loss_fct = CrossEntropyLoss()
             loss = loss_fct(
                 shift_logits.view(-1,
-                                    model.config.vocab_size).to(labels.device),
+                                  model.config.vocab_size).to(labels.device),
                 shift_labels.view(-1)
             )
 
@@ -124,6 +125,7 @@ class BetterTrainer(transformers.Trainer):
             loss.backward()
 
         return loss.detach()
+
 
 def train(
     # model/data params
@@ -158,7 +160,8 @@ def train(
     save_steps: int = 200,
 
     group_by_length: bool = False,  # faster, but produces an odd training loss curve,
-    resume_from_checkpoint: str = None,  # either training checkpoint or final adapter
+    # either training checkpoint or final adapter
+    resume_from_checkpoint: str = None,
 ):
     print(
         f"Training Alpaca-LoRA model with params:\n"
@@ -191,10 +194,10 @@ def train(
     #
     # data = load_dataset("json", data_files=data_path)
     data = datasets.load_dataset("JosephusCheung/GuanacoDataset")
-    data = data.select(range(10000)).map(generate_and_tokenize_prompt)
-    data = data.remove_columns(["instruction", "input", "output"])
-    dataset = data["train"].train_test_split(
-        test_size=val_set_size, shuffle=True, seed=0)
+    dataset = data["train"].select(range(10000)).map(
+        generate_and_tokenize_prompt)
+    dataset = dataset.remove_columns(["instruction", "input", "output"])
+    dataset = dataset.train_test_split(test_size=val_set_size, seed=0)
 
     #
     #
