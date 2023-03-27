@@ -340,22 +340,16 @@ def train(
             How the loss is computed by Trainer. By default, all models return the loss in the first element.
             Subclass and override for custom behavior.
             """
-            # if self.label_smoother is not None and "labels" in inputs:
-            #     labels = inputs.pop("labels")
-            # else:
-            #     labels = None
+            if self.label_smoother is not None and "labels" in inputs:
+                labels = inputs.pop("labels")
+            else:
+                labels = None
 
             print(inputs)
             # input_ids, labels = inputs
             outputs = model_forward(model, inputs['input_ids'])
-            print(outputs)
-            # outputs = model(**inputs.to("cuda:0"))
-            # Save past state if it exists
-            # TODO: this needs to be fixed and made cleaner later.
-            if self.args.past_index >= 0:
-                self._past = outputs[self.args.past_index]
+            print(unwrap_model(model)._get_name())
 
-            labels = inputs['labels']
             if labels is not None:
                 if unwrap_model(model)._get_name() in MODEL_FOR_CAUSAL_LM_MAPPING_NAMES.values():
                     loss = self.label_smoother(outputs, labels, shift_labels=True)
