@@ -14,7 +14,6 @@ import fire
 import torch
 import torch.nn as nn
 import bitsandbytes as bnb
-from datasets import load_dataset
 import transformers
 import datasets
 import math
@@ -187,6 +186,18 @@ def train(
 
     #
     #
+    # Dataset
+    #
+    #
+    # data = load_dataset("json", data_files=data_path)
+    data = datasets.load_dataset("JosephusCheung/GuanacoDataset")
+    data = data.select(range(10000)).map(generate_and_tokenize_prompt)
+    data = data.remove_columns(["instruction", "input", "output"])
+    dataset = data["train"].train_test_split(
+        test_size=val_set_size, shuffle=True, seed=0)
+
+    #
+    #
     #
     device_map = "auto"
     world_size = int(os.environ.get("WORLD_SIZE", 1))
@@ -296,18 +307,6 @@ def train(
                 user_prompt_len:
             ]  # could be sped up, probably
         return tokenized_full_prompt
-
-    #
-    #
-    # Dataset
-    #
-    #
-    # data = load_dataset("json", data_files=data_path)
-    data = load_dataset("JosephusCheung/GuanacoDataset")
-    data = data.map(generate_and_tokenize_prompt)
-    data = data.remove_columns(["instruction", "input", "output"])
-    dataset = data["train"].train_test_split(
-        test_size=val_set_size, shuffle=True, seed=0)
 
     #
     # Initial save
