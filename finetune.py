@@ -353,6 +353,8 @@ def train(
                 loss = loss_fct(shift_logits.view(-1, model.config.vocab_size), shift_labels.view(-1).to(logits.device))
                 loss.to(self.args.device)
 
+            print(loss)
+
             return (loss, logits) if return_outputs else loss
 
 
