@@ -350,10 +350,14 @@ def train(
                 shift_labels = labels[..., 1:].contiguous()
                 # Flatten the tokens
                 loss_fct = CrossEntropyLoss()
-                loss = loss_fct(shift_logits.view(-1, model.config.vocab_size), shift_labels.view(-1).to(logits.device))
-                loss.to(self.args.device)
+                loss = loss_fct(
+                    shift_logits.view(-1, model.config.vocab_size).to(labels.device),
+                    shift_labels.view(-1)
+                )
 
-            print(loss)
+                # print(loss, self.args.device)
+                # loss.to(self.args.device)
+
 
             return (loss, logits) if return_outputs else loss
 
