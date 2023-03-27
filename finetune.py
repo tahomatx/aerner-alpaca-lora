@@ -18,6 +18,7 @@ from datasets import load_dataset
 import transformers
 import datasets
 import math
+from torch.nn import CrossEntropyLoss
 
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union
 from transformers.modeling_utils import PreTrainedModel, load_sharded_checkpoint, unwrap_model
@@ -341,10 +342,17 @@ def train(
             else:
                 labels = None
 
-            outputs = model_forward(model, inputs['input_ids'])
-            loss = self.label_smoother(outputs, labels, shift_labels=True)
+            logits = model_forward(model, inputs['input_ids'])
+            loss = None
+            if labels is not None:
+                # Shift so that tokens < n predict n
+                shift_logits = logits[..., :-1, :].contiguous()
+                shift_labels = labels[..., 1:].contiguous()
+                # Flatten the tokens
+                loss_fct = CrossEntropyLoss()
+                loss = loss_fct(shift_logits.view(-1, self.config.vocab_size), shift_labels.view(-1))
 
-            return (loss, outputs) if return_outputs else loss
+            return (loss, logits) if return_outputs else loss
 
 
         def training_step(self, model: nn.Module, inputs: Dict[str, Union[torch.Tensor, Any]]) -> torch.Tensor:
