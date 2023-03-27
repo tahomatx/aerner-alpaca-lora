@@ -328,6 +328,7 @@ def train(
             # else:
             #     labels = None
 
+            print(model)
             outputs = model_forward(model, inputs)
             # outputs = model(**inputs.to("cuda:0"))
             # Save past state if it exists
