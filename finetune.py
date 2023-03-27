@@ -378,10 +378,9 @@ def train(
             load_best_model_at_end=True if val_set_size > 0 else False,
             ddp_find_unused_parameters=False if ddp else None,
 
-            # per_device_train_batch_size=128,
-            # per_device_eval_batch_size=128,
             # auto_find_batch_size=True,
             per_device_train_batch_size=micro_batch_size,
+            per_device_eval_batch_size=micro_batch_size,
             gradient_accumulation_steps=gradient_accumulation_steps,
 
             num_train_epochs=num_epochs,
