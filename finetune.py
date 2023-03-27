@@ -318,7 +318,7 @@ def train(
             return torch.tensor([1, 0.5, 0.3])
 
         def training_step(self, batch, batch_idx):
-            return torch.tensor([1])
+            return torch.tensor(1)
 
     trainer = BetterTrainer(
         model=model,
