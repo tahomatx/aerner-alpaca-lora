@@ -308,16 +308,20 @@ def train(
     #
     #
 
-    class StrictTrainingArguments(transformers.TrainingArguments):
+    class BetterTrainingArguments(transformers.TrainingArguments):
         @property
         def place_model_on_device(self):
             return False
 
-    trainer = transformers.Trainer(
+    class BetterTrainer(transformers.Trainer):
+        def compute_loss(self, model, inputs, return_outputs=False):
+            pass
+
+    trainer = BetterTrainer(
         model=model,
         train_dataset=dataset["train"],
         eval_dataset=dataset["test"],
-        args=StrictTrainingArguments(
+        args=BetterTrainingArguments(
             output_dir=output_dir,
             report_to="wandb",
 
