@@ -425,6 +425,8 @@ def train(
             warmup_steps=100,
             learning_rate=learning_rate,  # the Karpathy constant
             # group_by_length=group_by_length,
+
+            label_smoothing_factor = 0.1,
         ),
         data_collator=transformers.DataCollatorForSeq2Seq(
             tokenizer, pad_to_multiple_of=8, return_tensors="pt", padding=True
