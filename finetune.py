@@ -78,6 +78,53 @@ def model_forward(model, inputs):
     h = model.base_model.model.lm_head(h)
     return h
 
+class BetterTrainer(transformers.Trainer):
+    def _wrap_model(self, model, training=True, dataloader=None):
+        if not training:
+            return model
+        if self.args.torch_compile:
+            model = torch.compile(
+                model, backend=self.args.torch_compile_backend, mode=self.args.torch_compile_mode)
+
+        return model
+
+    def compute_loss(self, model, inputs, return_outputs=False):
+        if self.label_smoother is not None and "labels" in inputs:
+            labels = inputs.pop("labels")
+        else:
+            labels = None
+
+        logits = model_forward(model, inputs['input_ids'])
+        loss = None
+        if labels is not None:
+            shift_logits = logits[..., :-1, :].contiguous()
+            shift_labels = labels[..., 1:].contiguous()
+
+            loss_fct = CrossEntropyLoss()
+            loss = loss_fct(
+                shift_logits.view(-1,
+                                    model.config.vocab_size).to(labels.device),
+                shift_labels.view(-1)
+            )
+
+        return (loss, logits) if return_outputs else loss
+
+    def training_step(self, model: nn.Module, inputs: Dict[str, Union[torch.Tensor, Any]]) -> torch.Tensor:
+        model.train()
+        inputs = self._prepare_inputs(inputs)
+
+        with self.compute_loss_context_manager():
+            loss = self.compute_loss(model, inputs)
+
+        if self.args.gradient_accumulation_steps > 1 and not self.deepspeed:
+            loss = loss / self.args.gradient_accumulation_steps
+
+        if self.do_grad_scaling:
+            self.scaler.scale(loss).backward()
+        else:
+            loss.backward()
+
+        return loss.detach()
 
 def train(
     # model/data params
@@ -316,60 +363,6 @@ def train(
     # Trainer
     #
     #
-
-    class BetterTrainingArguments(transformers.TrainingArguments):
-        @property
-        def place_model_on_device(self):
-            return False
-
-    class BetterTrainer(transformers.Trainer):
-        def _wrap_model(self, model, training=True, dataloader=None):
-            if not training:
-                return model
-            if self.args.torch_compile:
-                model = torch.compile(
-                    model, backend=self.args.torch_compile_backend, mode=self.args.torch_compile_mode)
-
-            return model
-
-        def compute_loss(self, model, inputs, return_outputs=False):
-            if self.label_smoother is not None and "labels" in inputs:
-                labels = inputs.pop("labels")
-            else:
-                labels = None
-
-            logits = model_forward(model, inputs['input_ids'])
-            loss = None
-            if labels is not None:
-                shift_logits = logits[..., :-1, :].contiguous()
-                shift_labels = labels[..., 1:].contiguous()
-
-                loss_fct = CrossEntropyLoss()
-                loss = loss_fct(
-                    shift_logits.view(-1,
-                                      model.config.vocab_size).to(labels.device),
-                    shift_labels.view(-1)
-                )
-
-            return (loss, logits) if return_outputs else loss
-
-        def training_step(self, model: nn.Module, inputs: Dict[str, Union[torch.Tensor, Any]]) -> torch.Tensor:
-            model.train()
-            inputs = self._prepare_inputs(inputs)
-
-            with self.compute_loss_context_manager():
-                loss = self.compute_loss(model, inputs)
-
-            if self.args.gradient_accumulation_steps > 1 and not self.deepspeed:
-                loss = loss / self.args.gradient_accumulation_steps
-
-            if self.do_grad_scaling:
-                self.scaler.scale(loss).backward()
-            else:
-                loss.backward()
-
-            return loss.detach()
-
     trainer = BetterTrainer(
         model=model,
         train_dataset=dataset["train"],
