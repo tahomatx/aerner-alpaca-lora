@@ -106,7 +106,11 @@ def train(
     save_total_limit: int = 4,
 
     num_train_steps=20000,
-    save_steps=200,
+
+    warmup_steps: int = 100,
+    logging_steps: int = 10,
+    eval_steps: int = 200,
+    save_steps: int = 200,
 ):
     print(
         f"Training Alpaca-LoRA model with params:\n"
@@ -322,10 +326,9 @@ def train(
         def _wrap_model(self, model, training=True, dataloader=None):
             if not training:
                 return model
-            # torch.compile() needs to be called after wrapping the model with FSDP or DDP
-            # to ensure that it accounts for the graph breaks required by those wrappers
             if self.args.torch_compile:
-                model = torch.compile(model, backend=self.args.torch_compile_backend, mode=self.args.torch_compile_mode)
+                model = torch.compile(
+                    model, backend=self.args.torch_compile_backend, mode=self.args.torch_compile_mode)
 
             return model
 
@@ -343,12 +346,12 @@ def train(
 
                 loss_fct = CrossEntropyLoss()
                 loss = loss_fct(
-                    shift_logits.view(-1, model.config.vocab_size).to(labels.device),
+                    shift_logits.view(-1,
+                                      model.config.vocab_size).to(labels.device),
                     shift_labels.view(-1)
                 )
 
             return (loss, logits) if return_outputs else loss
-
 
         def training_step(self, model: nn.Module, inputs: Dict[str, Union[torch.Tensor, Any]]) -> torch.Tensor:
             model.train()
@@ -366,7 +369,6 @@ def train(
                 loss.backward()
 
             return loss.detach()
-
 
     trainer = BetterTrainer(
         model=model,
@@ -389,20 +391,20 @@ def train(
             num_train_epochs=num_epochs,
 
             logging_strategy="steps",
-            logging_steps=10,
+            logging_steps=logging_steps,
 
             evaluation_strategy="steps" if val_set_size > 0 else "no",
-            eval_steps=1 if val_set_size > 0 else None,
+            eval_steps=eval_steps if val_set_size > 0 else None,
 
             save_strategy="steps",
-            save_steps=200,
+            save_steps=save_steps,
             save_total_limit=save_total_limit,
 
-            warmup_steps=100,
+            warmup_steps=warmup_steps,
             learning_rate=learning_rate,  # the Karpathy constant
             # group_by_length=group_by_length,
 
-            label_smoothing_factor = 0.1,
+            label_smoothing_factor=0.1,
         ),
         data_collator=transformers.DataCollatorForSeq2Seq(
             tokenizer, pad_to_multiple_of=8, return_tensors="pt", padding=True
