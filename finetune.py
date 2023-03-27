@@ -323,13 +323,13 @@ def train(
             How the loss is computed by Trainer. By default, all models return the loss in the first element.
             Subclass and override for custom behavior.
             """
-            if self.label_smoother is not None and "labels" in inputs:
-                labels = inputs.pop("labels")
-            else:
-                labels = None
+            # if self.label_smoother is not None and "labels" in inputs:
+            #     labels = inputs.pop("labels")
+            # else:
+            #     labels = None
 
-            print(inputs)
-            outputs = model(**inputs.to("cuda:0"))
+            outputs = model_forward(model, inputs)
+            # outputs = model(**inputs.to("cuda:0"))
             # Save past state if it exists
             # TODO: this needs to be fixed and made cleaner later.
             if self.args.past_index >= 0:
@@ -373,26 +373,26 @@ def train(
             #     loss_mb = smp_forward_backward(model, inputs, self.args.gradient_accumulation_steps)
             #     return loss_mb.reduce_mean().detach().to(self.args.device)
 
-            with self.compute_loss_context_manager():
-                loss = self.compute_loss(model, inputs)
+            # with self.compute_loss_context_manager():
+            loss = self.compute_loss(model, inputs)
 
-            if self.args.n_gpu > 1:
-                loss = loss.mean()  # mean() to average on multi-gpu parallel training
+            # if self.args.n_gpu > 1:
+            #     loss = loss.mean()  # mean() to average on multi-gpu parallel training
 
-            if self.args.gradient_accumulation_steps > 1 and not self.deepspeed:
-                # deepspeed handles loss scaling by gradient_accumulation_steps in its `backward`
-                loss = loss / self.args.gradient_accumulation_steps
+            # if self.args.gradient_accumulation_steps > 1 and not self.deepspeed:
+            #     # deepspeed handles loss scaling by gradient_accumulation_steps in its `backward`
+            #     loss = loss / self.args.gradient_accumulation_steps
 
-            if self.do_grad_scaling:
-                self.scaler.scale(loss).backward()
-            elif self.use_apex:
-                with amp.scale_loss(loss, self.optimizer) as scaled_loss:
-                    scaled_loss.backward()
-            elif self.deepspeed:
-                # loss gets scaled under gradient_accumulation_steps in deepspeed
-                loss = self.deepspeed.backward(loss)
-            else:
-                loss.backward()
+            # if self.do_grad_scaling:
+            #     self.scaler.scale(loss).backward()
+            # elif self.use_apex:
+            #     with amp.scale_loss(loss, self.optimizer) as scaled_loss:
+            #         scaled_loss.backward()
+            # elif self.deepspeed:
+            #     # loss gets scaled under gradient_accumulation_steps in deepspeed
+            #     loss = self.deepspeed.backward(loss)
+            # else:
+            loss.backward()
 
             return loss.detach()
 
