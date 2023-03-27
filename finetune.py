@@ -153,6 +153,7 @@ def train(
 
     save_total_limit: int = 4,
     num_train_steps=20000,
+    dataset_size=10000,
 
     warmup_steps: int = 100,
     logging_steps: int = 10,
@@ -241,7 +242,7 @@ def train(
     #
     # data = load_dataset("json", data_files=data_path)
     data = datasets.load_dataset("JosephusCheung/GuanacoDataset")
-    dataset = data["train"].select(range(10000)).map(
+    dataset = data["train"].select(range(dataset_size)).map(
         generate_and_tokenize_prompt)
     dataset = dataset.remove_columns(["instruction", "input", "output"])
     dataset = dataset.train_test_split(test_size=val_set_size, seed=0)
