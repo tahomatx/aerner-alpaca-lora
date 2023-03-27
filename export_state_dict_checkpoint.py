@@ -84,6 +84,7 @@ def convert(
     config = AutoConfig.from_pretrained(base_model_id)
     params = {
         "dim": config.hidden_size,
+        "multiple_of": 256,
         "n_heads": config.num_attention_heads,
         "n_layers": config.num_hidden_layers,
         "norm_eps": config.rms_norm_eps,

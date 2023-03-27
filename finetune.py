@@ -265,42 +265,42 @@ def train(
     #
     #
 
-    dataloader = RepeatingLoader(torch.utils.data.DataLoader(
-        DatasetDataset(data["train"]),
-        batch_size=micro_batch_size,
-        shuffle=True
-    ))
+    # dataloader = RepeatingLoader(torch.utils.data.DataLoader(
+    #     DatasetDataset(data["train"]),
+    #     batch_size=micro_batch_size,
+    #     shuffle=True
+    # ))
 
-    print("Setup optimizer")
-    opt = torch.optim.AdamW([
-        p
-        for p in model.parameters()
-        if p.requires_grad
-    ], lr=learning_rate)
+    # print("Setup optimizer")
+    # opt = torch.optim.AdamW([
+    #     p
+    #     for p in model.parameters()
+    #     if p.requires_grad
+    # ], lr=learning_rate)
 
-    # Train (maybe can replace with Trainer? I think Trainer might mess up the device mappings though.)
-    print("Start training")
-    generator = iter(dataloader)
-    for step in tqdm.trange(num_train_steps, initial=0):
-        input_ids, labels = next(generator)
-        logits = model_forward(model, input_ids)
-        loss = torch.nn.functional.cross_entropy(
-            logits.view(-1, model.config.vocab_size),
-            labels.view(-1).to(logits.device),
-        )
-        loss.backward()
-        opt.step()
+    # # Train (maybe can replace with Trainer? I think Trainer might mess up the device mappings though.)
+    # print("Start training")
+    # generator = iter(dataloader)
+    # for step in tqdm.trange(num_train_steps, initial=0):
+    #     input_ids, labels = next(generator)
+    #     logits = model_forward(model, input_ids)
+    #     loss = torch.nn.functional.cross_entropy(
+    #         logits.view(-1, model.config.vocab_size),
+    #         labels.view(-1).to(logits.device),
+    #     )
+    #     loss.backward()
+    #     opt.step()
 
-        actual_step = step + 1
+    #     actual_step = step + 1
 
-        if step % 10 == 0:
-            print(f"Loss={loss.item():.3f}")
+    #     if step % 10 == 0:
+    #         print(f"Loss={loss.item():.3f}")
 
-        if actual_step % gradient_accumulation_steps == 0:
-            opt.zero_grad()
+    #     if actual_step % gradient_accumulation_steps == 0:
+    #         opt.zero_grad()
 
-        if actual_step % save_steps == 0:
-            model.save_pretrained(output_dir)
+    #     if actual_step % save_steps == 0:
+    #         model.save_pretrained(output_dir)
 
     #
     #
@@ -308,65 +308,65 @@ def train(
     #
     #
 
-    # class StrictTrainingArguments(transformers.TrainingArguments):
-    #     @property
-    #     def place_model_on_device(self):
-    #         return False
+    class StrictTrainingArguments(transformers.TrainingArguments):
+        @property
+        def place_model_on_device(self):
+            return False
 
-    # trainer = transformers.Trainer(
-    #     model=model,
-    #     train_dataset=dataset["train"],
-    #     eval_dataset=dataset["test"],
-    #     args=StrictTrainingArguments(
-    #         output_dir=output_dir,
-    #         report_to="wandb",
+    trainer = transformers.Trainer(
+        model=model,
+        train_dataset=dataset["train"],
+        eval_dataset=dataset["test"],
+        args=StrictTrainingArguments(
+            output_dir=output_dir,
+            report_to="wandb",
 
-    #         fp16=True,
-    #         load_best_model_at_end=True if val_set_size > 0 else False,
-    #         ddp_find_unused_parameters=False if ddp else None,
+            fp16=True,
+            load_best_model_at_end=True if val_set_size > 0 else False,
+            ddp_find_unused_parameters=False if ddp else None,
 
-    #         # per_device_train_batch_size=128,
-    #         # per_device_eval_batch_size=128,
-    #         # auto_find_batch_size=True,
-    #         per_device_train_batch_size=micro_batch_size,
-    #         gradient_accumulation_steps=gradient_accumulation_steps,
+            # per_device_train_batch_size=128,
+            # per_device_eval_batch_size=128,
+            # auto_find_batch_size=True,
+            per_device_train_batch_size=micro_batch_size,
+            gradient_accumulation_steps=gradient_accumulation_steps,
 
-    #         num_train_epochs=num_epochs,
+            num_train_epochs=num_epochs,
 
-    #         logging_strategy="steps",
-    #         logging_steps=10,
+            logging_strategy="steps",
+            logging_steps=10,
 
-    #         evaluation_strategy="steps" if val_set_size > 0 else "no",
-    #         eval_steps=200 if val_set_size > 0 else None,
+            evaluation_strategy="steps" if val_set_size > 0 else "no",
+            eval_steps=200 if val_set_size > 0 else None,
 
-    #         save_strategy="steps",
-    #         save_steps=200,
-    #         save_total_limit=save_total_limit,
+            save_strategy="steps",
+            save_steps=200,
+            save_total_limit=save_total_limit,
 
-    #         warmup_steps=100,
-    #         learning_rate=learning_rate,  # the Karpathy constant
-    #         # group_by_length=group_by_length,
-    #     ),
-    #     data_collator=transformers.DataCollatorForSeq2Seq(
-    #         tokenizer, pad_to_multiple_of=8, return_tensors="pt", padding=True
-    #     ),
-    # )
+            warmup_steps=100,
+            learning_rate=learning_rate,  # the Karpathy constant
+            # group_by_length=group_by_length,
+        ),
+        data_collator=transformers.DataCollatorForSeq2Seq(
+            tokenizer, pad_to_multiple_of=8, return_tensors="pt", padding=True
+        ),
+    )
 
-    # old_state_dict = model.state_dict
-    # model.state_dict = (
-    #     lambda self, *
-    #     _, **__: get_peft_model_state_dict(self, old_state_dict())
-    # ).__get__(model, type(model))
+    old_state_dict = model.state_dict
+    model.state_dict = (
+        lambda self, *
+        _, **__: get_peft_model_state_dict(self, old_state_dict())
+    ).__get__(model, type(model))
 
-    # if torch.__version__ >= "2" and sys.platform != "win32":
-    #     model = torch.compile(model)
+    if torch.__version__ >= "2" and sys.platform != "win32":
+        model = torch.compile(model)
 
-    # print("Starting training")
-    # trainer.train()
+    print("Starting training")
+    trainer.train()
 
-    # model.save_pretrained(output_dir)
+    model.save_pretrained(output_dir)
 
-    # print("\n If there's a warning about missing keys above, please disregard :)")
+    print("\n If there's a warning about missing keys above, please disregard :)")
 
 
 def generate_prompt(data_point):
