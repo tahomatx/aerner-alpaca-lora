@@ -370,11 +370,11 @@ def train(
 
             return loss.detach()
 
-    trainer = transformers.TrainingArguments(
+    trainer = BetterTrainer(
         model=model,
         train_dataset=dataset["train"],
         eval_dataset=dataset["test"],
-        args=BetterTrainingArguments(
+        args=transformers.TrainingArguments(
             output_dir=output_dir,
             report_to="wandb",
 
