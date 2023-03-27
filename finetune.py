@@ -320,15 +320,8 @@ def train(
 
     class BetterTrainer(transformers.Trainer):
         def _wrap_model(self, model, training=True, dataloader=None):
-            # already initialized its own DDP and AMP
-            if self.deepspeed:
-                return self.deepspeed
-
-            # Note: in torch.distributed mode, there's no point in wrapping the model
-            # inside a DistributedDataParallel as we'll be under `no_grad` anyways.
             if not training:
                 return model
-
             # torch.compile() needs to be called after wrapping the model with FSDP or DDP
             # to ensure that it accounts for the graph breaks required by those wrappers
             if self.args.torch_compile:
@@ -345,62 +338,30 @@ def train(
             logits = model_forward(model, inputs['input_ids'])
             loss = None
             if labels is not None:
-                # Shift so that tokens < n predict n
                 shift_logits = logits[..., :-1, :].contiguous()
                 shift_labels = labels[..., 1:].contiguous()
-                # Flatten the tokens
+
                 loss_fct = CrossEntropyLoss()
                 loss = loss_fct(
                     shift_logits.view(-1, model.config.vocab_size).to(labels.device),
                     shift_labels.view(-1)
                 )
 
-                # print(loss, self.args.device)
-                # loss.to(self.args.device)
-
-
             return (loss, logits) if return_outputs else loss
 
 
         def training_step(self, model: nn.Module, inputs: Dict[str, Union[torch.Tensor, Any]]) -> torch.Tensor:
-            """
-            Perform a training step on a batch of inputs.
-            Subclass and override to inject custom behavior.
-            Args:
-                model (`nn.Module`):
-                    The model to train.
-                inputs (`Dict[str, Union[torch.Tensor, Any]]`):
-                    The inputs and targets of the model.
-                    The dictionary will be unpacked before being fed to the model. Most models expect the targets under the
-                    argument `labels`. Check your model's documentation for all accepted arguments.
-            Return:
-                `torch.Tensor`: The tensor with training loss on this batch.
-            """
             model.train()
             inputs = self._prepare_inputs(inputs)
 
-            # if is_sagemaker_mp_enabled():
-            #     loss_mb = smp_forward_backward(model, inputs, self.args.gradient_accumulation_steps)
-            #     return loss_mb.reduce_mean().detach().to(self.args.device)
-
-            # with self.compute_loss_context_manager():
-            loss = self.compute_loss(model, inputs)
-
-            # if self.args.n_gpu > 1:
-            #     loss = loss.mean()  # mean() to average on multi-gpu parallel training
+            with self.compute_loss_context_manager():
+                loss = self.compute_loss(model, inputs)
 
             if self.args.gradient_accumulation_steps > 1 and not self.deepspeed:
-                # deepspeed handles loss scaling by gradient_accumulation_steps in its `backward`
                 loss = loss / self.args.gradient_accumulation_steps
 
             if self.do_grad_scaling:
                 self.scaler.scale(loss).backward()
-            # elif self.use_apex:
-            #     with amp.scale_loss(loss, self.optimizer) as scaled_loss:
-            #         scaled_loss.backward()
-            # elif self.deepspeed:
-            #     # loss gets scaled under gradient_accumulation_steps in deepspeed
-            #     loss = self.deepspeed.backward(loss)
             else:
                 loss.backward()
 
@@ -431,7 +392,7 @@ def train(
             logging_steps=10,
 
             evaluation_strategy="steps" if val_set_size > 0 else "no",
-            eval_steps=200 if val_set_size > 0 else None,
+            eval_steps=1 if val_set_size > 0 else None,
 
             save_strategy="steps",
             save_steps=200,
