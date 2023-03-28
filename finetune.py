@@ -130,9 +130,8 @@ class BetterTrainer(transformers.Trainer):
 def train(
     # model/data params
     base_model: str = "",  # the only required argument
-    data_path: str = "./alpaca_data_cleaned.json",
     output_dir: str = "./lora-alpaca",
-    dataset_uri: str = "./aerner-guanaco-v1-512",
+    dataset_uri: str = "JosephusCheung/GuanacoDataset",
     # training hyperparams
     batch_size: int = 128,
     micro_batch_size: int = 1,
@@ -167,7 +166,7 @@ def train(
     print(
         f"Training Alpaca-LoRA model with params:\n"
         f"base_model: {base_model}\n"
-        f"data_path: {data_path}\n"
+        f"dataset_uri: {dataset_uri}\n"
         f"output_dir: {output_dir}\n"
         f"batch_size: {batch_size}\n"
         f"micro_batch_size: {micro_batch_size}\n"
@@ -225,7 +224,7 @@ def train(
         tokenized_full_prompt = tokenize(full_prompt)
         if not train_on_inputs:
             user_prompt = generate_prompt({**data_point, "output": ""})
-            tokenized_user_prompt = tokenize(user_prompt, add_eos_token=False)
+            tokenized_user_prompt = tokenize(user_prompt, add_eos_token=True)
             user_prompt_len = len(tokenized_user_prompt["input_ids"])
 
             tokenized_full_prompt["labels"] = [
@@ -241,7 +240,7 @@ def train(
     #
     #
     # data = load_dataset("json", data_files=data_path)
-    data = datasets.load_dataset("JosephusCheung/GuanacoDataset")
+    data = datasets.load_dataset(dataset_uri)
     dataset = data["train"].select(range(dataset_size)).map(
         generate_and_tokenize_prompt)
     dataset = dataset.remove_columns(["instruction", "input", "output"])
