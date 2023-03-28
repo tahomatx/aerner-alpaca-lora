@@ -1,3 +1,7 @@
+# pip uninstall -y transformers && pip install -q git+https://github.com/huggingface/transformers.git git+https://github.com/huggingface/peft.git bitsandbytes datasets accelerate sentencepiece wandb fire
+
+
+
 from peft import (
     prepare_model_for_int8_training,
     LoraConfig,
@@ -284,7 +288,7 @@ def train(
     #
     model = LlamaForCausalLM.from_pretrained(
         base_model,
-        load_in_8bit=True,
+        # load_in_8bit=True,
         torch_dtype=torch.float16,
         device_map=device_map,
     )
