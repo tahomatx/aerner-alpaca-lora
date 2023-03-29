@@ -95,6 +95,7 @@ class BetterTrainer(transformers.Trainer):
     def compute_loss(self, model, inputs, return_outputs=False):
         if self.label_smoother is not None and "labels" in inputs:
             labels = inputs.pop("labels")
+            print(inputs['input_ids'], labels)
         else:
             labels = None
 
@@ -111,7 +112,6 @@ class BetterTrainer(transformers.Trainer):
                 shift_labels.view(-1)
             )
 
-        print(inputs['input_ids'], labels, loss)
 
         return (loss, logits) if return_outputs else loss
 
