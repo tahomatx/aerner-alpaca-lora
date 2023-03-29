@@ -345,7 +345,7 @@ def train(
     #
     print(len(dataset["train"]), len(dataset["test"]))
 
-    trainer=transformers.Trainer(
+    trainer=BetterTrainer(
         model=model,
         train_dataset=dataset["train"],
         eval_dataset=dataset["test"],
