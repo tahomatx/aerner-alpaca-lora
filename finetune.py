@@ -31,43 +31,6 @@ assert (
 ), "LLaMA is now in HuggingFace's main branch.\nPlease reinstall it: pip uninstall transformers && pip install git+https://github.com/huggingface/transformers.git"
 
 
-class DatasetDataset(torch.utils.data.Dataset):
-    def __init__(self, dataset):
-        self.dataset = dataset
-
-    def __len__(self):
-        return len(self.dataset)
-
-    def __getitem__(self, idx):
-        return (
-            torch.LongTensor(self.dataset[idx]["input_ids"])[:-1],
-            torch.LongTensor(self.dataset[idx]["input_ids"])[1:],
-        )
-
-
-class RepeatingLoader:
-    def __init__(self, loader):
-        """Wraps an iterator to allow for infinite iteration. This is especially useful
-        for DataLoader types that we wish to automatically restart upon completion.
-
-        Args:
-            loader (iterator): The data loader to repeat.
-        """
-        self.loader = loader
-        self.data_iter = iter(self.loader)
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        try:
-            batch = next(self.data_iter)
-        except StopIteration:
-            self.data_iter = iter(self.loader)
-            batch = next(self.data_iter)
-        return batch
-
-
 def model_forward(model, inputs):
     h = inputs
     h = h.to(model.base_model.model.model.embed_tokens.weight.device)
@@ -82,14 +45,14 @@ def model_forward(model, inputs):
 
 
 class BetterTrainer(transformers.Trainer):
-    def _wrap_model(self, model, training=True, dataloader=None):
-        if not training:
-            return model
-        if self.args.torch_compile:
-            model = torch.compile(
-                model, backend=self.args.torch_compile_backend, mode=self.args.torch_compile_mode)
+    # def _wrap_model(self, model, training=True, dataloader=None):
+    #     if not training:
+    #         return model
+    #     if self.args.torch_compile:
+    #         model = torch.compile(
+    #             model, backend=self.args.torch_compile_backend, mode=self.args.torch_compile_mode)
 
-        return model
+    #     return model
 
     def compute_loss(self, model, inputs, return_outputs=False):
         """
@@ -124,22 +87,22 @@ class BetterTrainer(transformers.Trainer):
 
         return (loss, outputs) if return_outputs else loss
 
-    def training_step(self, model: nn.Module, inputs: Dict[str, Union[torch.Tensor, Any]]) -> torch.Tensor:
-        model.train()
-        inputs = self._prepare_inputs(inputs)
+    # def training_step(self, model: nn.Module, inputs: Dict[str, Union[torch.Tensor, Any]]) -> torch.Tensor:
+    #     model.train()
+    #     inputs = self._prepare_inputs(inputs)
 
-        with self.compute_loss_context_manager():
-            loss = self.compute_loss(model, inputs)
+    #     with self.compute_loss_context_manager():
+    #         loss = self.compute_loss(model, inputs)
 
-        if self.args.gradient_accumulation_steps > 1 and not self.deepspeed:
-            loss = loss / self.args.gradient_accumulation_steps
+    #     if self.args.gradient_accumulation_steps > 1 and not self.deepspeed:
+    #         loss = loss / self.args.gradient_accumulation_steps
 
-        if self.do_grad_scaling:
-            self.scaler.scale(loss).backward()
-        else:
-            loss.backward()
+    #     if self.do_grad_scaling:
+    #         self.scaler.scale(loss).backward()
+    #     else:
+    #         loss.backward()
 
-        return loss.detach()
+    #     return loss.detach()
 
 
 def train(
