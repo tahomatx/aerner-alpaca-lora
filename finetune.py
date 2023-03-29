@@ -111,6 +111,8 @@ class BetterTrainer(transformers.Trainer):
                 shift_labels.view(-1)
             )
 
+        print(labels, logits)
+
         return (loss, logits) if return_outputs else loss
 
     def training_step(self, model: nn.Module, inputs: Dict[str, Union[torch.Tensor, Any]]) -> torch.Tensor:
