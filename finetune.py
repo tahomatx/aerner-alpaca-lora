@@ -347,8 +347,8 @@ def train(
 
     trainer = BetterTrainer(
         model=model,
-        train_dataset=dataset["train"],
-        eval_dataset=dataset["test"],
+        train_dataset=iter(dataset["train"]),
+        eval_dataset=iter(dataset["test"]),
         args=transformers.TrainingArguments(
             output_dir=output_dir,
             # report_to="wandb",
