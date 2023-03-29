@@ -100,6 +100,8 @@ class BetterTrainer(transformers.Trainer):
             labels = inputs.pop("labels")
         else:
             labels = None
+
+        print(labels, inputs['input_ids'])
         outputs = model(**inputs)
         # Save past state if it exists
         # TODO: this needs to be fixed and made cleaner later.
