@@ -351,34 +351,34 @@ def train(
         eval_dataset=dataset["test"],
         args=transformers.TrainingArguments(
             output_dir=output_dir,
-            report_to="wandb",
+            # report_to="wandb",
 
-            fp16=True,
-            load_best_model_at_end=True if val_set_size > 0 else False,
-            ddp_find_unused_parameters=False if ddp else None,
+            # fp16=True,
+            # load_best_model_at_end=True if val_set_size > 0 else False,
+            # ddp_find_unused_parameters=False if ddp else None,
 
             # auto_find_batch_size=True,
             per_device_train_batch_size=micro_batch_size,
             per_device_eval_batch_size=micro_batch_size,
-            gradient_accumulation_steps=gradient_accumulation_steps,
+            # gradient_accumulation_steps=gradient_accumulation_steps,
 
-            num_train_epochs=num_epochs,
+            # num_train_epochs=num_epochs,
 
-            logging_strategy="steps",
-            logging_steps=logging_steps,
+            # logging_strategy="steps",
+            # logging_steps=logging_steps,
 
-            evaluation_strategy="steps" if val_set_size > 0 else "no",
-            eval_steps=eval_steps if val_set_size > 0 else None,
+            # evaluation_strategy="steps" if val_set_size > 0 else "no",
+            # eval_steps=eval_steps if val_set_size > 0 else None,
 
-            save_strategy="steps",
-            save_steps=save_steps,
-            save_total_limit=save_total_limit,
+            # save_strategy="steps",
+            # save_steps=save_steps,
+            # save_total_limit=save_total_limit,
 
-            warmup_steps=warmup_steps,
-            learning_rate=learning_rate,  # the Karpathy constant
-            # group_by_length=group_by_length,
+            # warmup_steps=warmup_steps,
+            # learning_rate=learning_rate,  # the Karpathy constant
+            # # group_by_length=group_by_length,
 
-            label_smoothing_factor=0.1,
+            # label_smoothing_factor=0.1,
         ),
         # data_collator=transformers.DataCollatorForSeq2Seq(
         #     tokenizer, pad_to_multiple_of=8, return_tensors="pt", padding=True
