@@ -148,7 +148,8 @@ def train(
     dataset = dataset.remove_columns(["instruction", "input", "output"])
     dataset = dataset.train_test_split(test_size=val_set_size, seed=0)
 
-    for d in dataset["train"]:
+    # Data check
+    for d in dataset["train"].select(range(10)):
         print(d['input_ids'])
         print("")
 
@@ -208,7 +209,6 @@ def train(
 
             fp16=True,
             load_best_model_at_end=True if val_set_size > 0 else False,
-            ddp_find_unused_parameters=False if ddp else None,
 
             # auto_find_batch_size=True,
             per_device_train_batch_size=micro_batch_size,
@@ -233,9 +233,9 @@ def train(
 
             label_smoothing_factor=0.1,
         ),
-        # data_collator=transformers.DataCollatorForSeq2Seq(
-        #     tokenizer, pad_to_multiple_of=8, return_tensors="pt", padding=True
-        # ),
+        data_collator=transformers.DataCollatorForSeq2Seq(
+            tokenizer, pad_to_multiple_of=8, return_tensors="pt", padding=True
+        ),
     )
 
     old_state_dict = model.state_dict
