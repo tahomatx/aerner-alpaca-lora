@@ -367,7 +367,7 @@ def train(
     # Trainer
     #
     #
-    print(len(dataset["train"]), len(dataset["test"])
+    print(len(dataset["train"]), len(dataset["test"]))
 
     trainer=BetterTrainer(
         model=model,
