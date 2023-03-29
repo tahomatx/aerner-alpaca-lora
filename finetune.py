@@ -34,13 +34,7 @@ def train(
     base_model: str = "",  # the only required argument
     output_dir: str = "./lora-alpaca",
     dataset_uri: str = "JosephusCheung/GuanacoDataset",
-    # training hyperparams
-    batch_size: int = 128,
-    micro_batch_size: int = 1,
-    num_epochs: int = 3,
-    learning_rate: float = 3e-4,
-    cutoff_len: int = 256,
-    val_set_size: int = 2000,
+
     # lora hyperparams
     lora_r: int = 8,
     lora_alpha: int = 16,
@@ -51,15 +45,22 @@ def train(
     ],
     # llm hyperparams
     train_on_inputs: bool = True,  # if False, masks out inputs in loss
+    learning_rate: float = 3e-4,
 
-    save_total_limit: int = 4,
-    num_train_steps=20000,
-    dataset_size=10000,
+    # training hyperparams
+    batch_size: int = 256,
+    micro_batch_size: int = 64,
+    cutoff_len: int = 512,
 
-    warmup_steps: int = 100,
-    logging_steps: int = 10,
-    eval_steps: int = 200,
-    save_steps: int = 200,
+    dataset_size=65536,
+    val_set_size: int = 1024,
+
+    num_epochs: int = 3,
+    warmup_steps: int = 128,
+    logging_steps: int = 1,
+    eval_steps: int = 32,
+    save_steps: int = 32,
+    save_total_limit: int = 16,
 
     group_by_length: bool = False,  # faster, but produces an odd training loss curve,
     # either training checkpoint or final adapter
