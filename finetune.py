@@ -224,7 +224,7 @@ def train(
     dataset = dataset.remove_columns(["instruction", "input", "output"])
     dataset = dataset.train_test_split(test_size=val_set_size, seed=0)
 
-    for d in dataset.values():
+    for d in dataset["train"].values():
         print(d)
 
     #
