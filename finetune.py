@@ -238,22 +238,22 @@ def train(
     # device_map
     #
     config = AutoConfig.from_pretrained(base_model)
-    device_ids = list(range(torch.cuda.device_count()))
-    device_map = {
-        "model.embed_tokens": device_ids[0],
-        "model.norm.weight": device_ids[-1],
-        "lm_head": device_ids[-1],
-    }
-    allocations = [
-        device_ids[i] for i in
-        sorted(list(range(len(device_ids))) *
-               math.ceil(config.num_hidden_layers / len(device_ids)))
-    ]
-    for layer_i, device_id in enumerate(allocations):
-        device_map[f"model.layers.{layer_i}"] = device_id
+    # device_ids = list(range(torch.cuda.device_count()))
+    # device_map = {
+    #     "model.embed_tokens": device_ids[0],
+    #     "model.norm.weight": device_ids[-1],
+    #     "lm_head": device_ids[-1],
+    # }
+    # allocations = [
+    #     device_ids[i] for i in
+    #     sorted(list(range(len(device_ids))) *
+    #            math.ceil(config.num_hidden_layers / len(device_ids)))
+    # ]
+    # for layer_i, device_id in enumerate(allocations):
+    #     device_map[f"model.layers.{layer_i}"] = device_id
 
-    print(device_ids)
-    print(device_map)
+    # print(device_ids)
+    # print(device_map)
 
     #
     #
@@ -262,14 +262,14 @@ def train(
     #
     model = LlamaForCausalLM.from_pretrained(
         base_model,
-        # load_in_8bit=True,
+        load_in_8bit=True,
         torch_dtype=torch.float16,
         device_map=device_map,
     )
 
     model.gradient_checkpointing_enable()
     model.enable_input_require_grads()
-    model.lm_head.to(torch.float16)
+    # model.lm_head.to(torch.float16)
     # silence the warnings. Please re-enable for inference!
     model.config.use_cache = False
     model = prepare_model_for_int8_training(model)
@@ -351,34 +351,34 @@ def train(
         eval_dataset=dataset["test"],
         args=transformers.TrainingArguments(
             output_dir=output_dir,
-            # report_to="wandb",
+            report_to="wandb",
 
-            # fp16=True,
-            # load_best_model_at_end=True if val_set_size > 0 else False,
-            # ddp_find_unused_parameters=False if ddp else None,
+            fp16=True,
+            load_best_model_at_end=True if val_set_size > 0 else False,
+            ddp_find_unused_parameters=False if ddp else None,
 
             # auto_find_batch_size=True,
             per_device_train_batch_size=micro_batch_size,
             per_device_eval_batch_size=micro_batch_size,
-            # gradient_accumulation_steps=gradient_accumulation_steps,
+            gradient_accumulation_steps=gradient_accumulation_steps,
 
-            # num_train_epochs=num_epochs,
+            num_train_epochs=num_epochs,
 
-            # logging_strategy="steps",
-            # logging_steps=logging_steps,
+            logging_strategy="steps",
+            logging_steps=logging_steps,
 
-            # evaluation_strategy="steps" if val_set_size > 0 else "no",
-            # eval_steps=eval_steps if val_set_size > 0 else None,
+            evaluation_strategy="steps" if val_set_size > 0 else "no",
+            eval_steps=eval_steps if val_set_size > 0 else None,
 
-            # save_strategy="steps",
-            # save_steps=save_steps,
-            # save_total_limit=save_total_limit,
+            save_strategy="steps",
+            save_steps=save_steps,
+            save_total_limit=save_total_limit,
 
-            # warmup_steps=warmup_steps,
-            # learning_rate=learning_rate,  # the Karpathy constant
-            # # group_by_length=group_by_length,
+            warmup_steps=warmup_steps,
+            learning_rate=learning_rate,  # the Karpathy constant
+            # group_by_length=group_by_length,
 
-            # label_smoothing_factor=0.1,
+            label_smoothing_factor=0.1,
         ),
         # data_collator=transformers.DataCollatorForSeq2Seq(
         #     tokenizer, pad_to_multiple_of=8, return_tensors="pt", padding=True
