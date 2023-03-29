@@ -343,9 +343,9 @@ def train(
     # Trainer
     #
     #
-    print(len(dataset["train"]), len(dataset["test"]))
+    print(len(dataset["train"]), len(dataset["test"]), type(dataset["train"]))
 
-    trainer=BetterTrainer(
+    trainer = BetterTrainer(
         model=model,
         train_dataset=dataset["train"],
         eval_dataset=dataset["test"],
@@ -385,14 +385,14 @@ def train(
         # ),
     )
 
-    old_state_dict=model.state_dict
-    model.state_dict=(
+    old_state_dict = model.state_dict
+    model.state_dict = (
         lambda self, *
         _, **__: get_peft_model_state_dict(self, old_state_dict())
     ).__get__(model, type(model))
 
     if torch.__version__ >= "2" and sys.platform != "win32":
-        model=torch.compile(model)
+        model = torch.compile(model)
 
     trainer.train(resume_from_checkpoint=resume_from_checkpoint)
     model.save_pretrained(output_dir)
