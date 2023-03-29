@@ -111,7 +111,7 @@ class BetterTrainer(transformers.Trainer):
                 shift_labels.view(-1)
             )
 
-        print(inputs['input_ids'], labels)
+        print(inputs['input_ids'], labels, loss)
 
         return (loss, logits) if return_outputs else loss
 
