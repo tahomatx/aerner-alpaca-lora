@@ -248,9 +248,36 @@ def train(
     dataset = dataset.remove_columns(["instruction", "input", "output"])
     dataset = dataset.train_test_split(test_size=val_set_size, seed=0)
 
-    for d in dataset["train"]:
-        print(d['input_ids'])
-        print("")
+    #
+    #
+    #
+    device_map = "auto"
+    world_size = int(os.environ.get("WORLD_SIZE", 1))
+    ddp = world_size != 1
+    if ddp:
+        device_map = {"": int(os.environ.get("LOCAL_RANK") or 0)}
+        gradient_accumulation_steps = gradient_accumulation_steps // world_size
+
+    #
+    # device_map
+    #
+    config = AutoConfig.from_pretrained(base_model)
+    device_ids = list(range(torch.cuda.device_count()))
+    device_map = {
+        "model.embed_tokens": device_ids[0],
+        "model.norm.weight": device_ids[-1],
+        "lm_head": device_ids[-1],
+    }
+    allocations = [
+        device_ids[i] for i in
+        sorted(list(range(len(device_ids))) *
+               math.ceil(config.num_hidden_layers / len(device_ids)))
+    ]
+    for layer_i, device_id in enumerate(allocations):
+        device_map[f"model.layers.{layer_i}"] = device_id
+
+    print(device_ids)
+    print(device_map)
 
     #
     #
@@ -259,16 +286,17 @@ def train(
     #
     model = LlamaForCausalLM.from_pretrained(
         base_model,
-        load_in_8bit=True,
+        # load_in_8bit=True,
         torch_dtype=torch.float16,
-        device_map='auto',
+        device_map=device_map,
     )
 
-    model = prepare_model_for_int8_training(model)
     model.gradient_checkpointing_enable()
     model.enable_input_require_grads()
+    model.lm_head.to(torch.float16)
     # silence the warnings. Please re-enable for inference!
     model.config.use_cache = False
+    model = prepare_model_for_int8_training(model)
 
     #
     #
@@ -293,12 +321,55 @@ def train(
 
     #
     #
+    # Train loop
+    #
+    #
+
+    # dataloader = RepeatingLoader(torch.utils.data.DataLoader(
+    #     DatasetDataset(data["train"]),
+    #     batch_size=micro_batch_size,
+    #     shuffle=True
+    # ))
+
+    # print("Setup optimizer")
+    # opt = torch.optim.AdamW([
+    #     p
+    #     for p in model.parameters()
+    #     if p.requires_grad
+    # ], lr=learning_rate)
+
+    # # Train (maybe can replace with Trainer? I think Trainer might mess up the device mappings though.)
+    # print("Start training")
+    # generator = iter(dataloader)
+    # for step in tqdm.trange(num_train_steps, initial=0):
+    #     input_ids, labels = next(generator)
+    #     logits = model_forward(model, input_ids)
+    #     loss = torch.nn.functional.cross_entropy(
+    #         logits.view(-1, model.config.vocab_size),
+    #         labels.view(-1).to(logits.device),
+    #     )
+    #     loss.backward()
+    #     opt.step()
+
+    #     actual_step = step + 1
+
+    #     if step % 10 == 0:
+    #         print(f"Loss={loss.item():.3f}")
+
+    #     if actual_step % gradient_accumulation_steps == 0:
+    #         opt.zero_grad()
+
+    #     if actual_step % save_steps == 0:
+    #         model.save_pretrained(output_dir)
+
+    #
+    #
     # Trainer
     #
     #
     print(len(dataset["train"]), len(dataset["test"]))
 
-    trainer = BetterTrainer(
+    trainer=BetterTrainer(
         model=model,
         train_dataset=dataset["train"],
         eval_dataset=dataset["test"],
@@ -338,14 +409,14 @@ def train(
         # ),
     )
 
-    old_state_dict = model.state_dict
-    model.state_dict = (
+    old_state_dict=model.state_dict
+    model.state_dict=(
         lambda self, *
         _, **__: get_peft_model_state_dict(self, old_state_dict())
     ).__get__(model, type(model))
 
     if torch.__version__ >= "2" and sys.platform != "win32":
-        model = torch.compile(model)
+        model=torch.compile(model)
 
     trainer.train(resume_from_checkpoint=resume_from_checkpoint)
     model.save_pretrained(output_dir)
