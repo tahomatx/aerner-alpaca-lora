@@ -93,6 +93,7 @@ class BetterTrainer(transformers.Trainer):
 
     def compute_loss(self, model, inputs, return_outputs=False):
 
+        print(inputs['input_ids'])
         labels = inputs.pop("labels")
         logits = model_forward(model, inputs['input_ids'])
 
@@ -100,8 +101,6 @@ class BetterTrainer(transformers.Trainer):
         if labels is not None:
             shift_logits = logits[..., :-1, :].contiguous()
             shift_labels = labels[..., 1:].contiguous()
-
-            print(shift_logits, shift_labels)
 
             loss_fct = CrossEntropyLoss()
             loss = loss_fct(
