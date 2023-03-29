@@ -93,13 +93,9 @@ class BetterTrainer(transformers.Trainer):
 
     def compute_loss(self, model, inputs, return_outputs=False):
 
-        if self.label_smoother is not None and "labels" in inputs:
-            labels = inputs.pop("labels")
-            print(inputs['input_ids'], labels)
-        else:
-            labels = None
-
+        labels = inputs.pop("labels")
         logits = model_forward(model, inputs['input_ids'])
+
         loss = None
         if labels is not None:
             shift_logits = logits[..., :-1, :].contiguous()
