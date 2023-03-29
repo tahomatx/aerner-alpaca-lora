@@ -1,7 +1,6 @@
 # pip uninstall -y transformers && pip install -q git+https://github.com/huggingface/transformers.git git+https://github.com/huggingface/peft.git bitsandbytes datasets accelerate sentencepiece wandb fire
 
 
-
 from peft import (
     prepare_model_for_int8_training,
     LoraConfig,
@@ -93,7 +92,6 @@ class BetterTrainer(transformers.Trainer):
         return model
 
     def compute_loss(self, model, inputs, return_outputs=False):
-        print(self.label_smoother)
 
         if self.label_smoother is not None and "labels" in inputs:
             labels = inputs.pop("labels")
@@ -107,13 +105,14 @@ class BetterTrainer(transformers.Trainer):
             shift_logits = logits[..., :-1, :].contiguous()
             shift_labels = labels[..., 1:].contiguous()
 
+            print(shift_logits, shift_labels)
+
             loss_fct = CrossEntropyLoss()
             loss = loss_fct(
                 shift_logits.view(-1,
                                   model.config.vocab_size).to(labels.device),
                 shift_labels.view(-1)
             )
-
 
         return (loss, logits) if return_outputs else loss
 
