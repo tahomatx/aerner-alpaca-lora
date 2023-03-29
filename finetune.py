@@ -272,7 +272,7 @@ def train(
     # model.lm_head.to(torch.float16)
     # silence the warnings. Please re-enable for inference!
     model.config.use_cache = False
-    model = prepare_model_for_int8_training(model)
+    # model = prepare_model_for_int8_training(model)
 
     #
     #
