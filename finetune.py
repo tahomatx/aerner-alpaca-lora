@@ -404,9 +404,9 @@ def train(
 
             label_smoothing_factor=0.1,
         ),
-        data_collator=transformers.DataCollatorForSeq2Seq(
-            tokenizer, pad_to_multiple_of=8, return_tensors="pt", padding=True
-        ),
+        # data_collator=transformers.DataCollatorForSeq2Seq(
+        #     tokenizer, pad_to_multiple_of=8, return_tensors="pt", padding=True
+        # ),
     )
 
     old_state_dict=model.state_dict
