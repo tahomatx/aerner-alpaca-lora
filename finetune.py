@@ -143,7 +143,8 @@ def train(
     #
     #
     # data = load_dataset("json", data_files=data_path)
-    data = datasets.load_dataset(dataset_uri)
+    # data = datasets.load_dataset(dataset_uri)
+    dataset = datasets.load_dataset("./aerner-guanaco-ja")
     dataset = data["train"].select(range(dataset_size + val_set_size)).map(
         generate_and_tokenize_prompt)
     dataset = dataset.remove_columns(["instruction", "input", "output"])
