@@ -1,4 +1,6 @@
 
+import sys
+import os
 import transformers
 import peft
 import datasets
@@ -16,12 +18,21 @@ class PeftArguments:
     num_virtual_tokens: Optional[int]
     mapping_hidden_dim: Optional[int]
 
-# @dataclass
-# class PeftArguments(peft.LoraConfig, peft.PromptTuningConfig):
-#     pass
+# # @dataclass
+# # class PeftArguments(peft.LoraConfig, peft.PromptTuningConfig):
+# #     pass
 
-# a_args = transformers.HfArgumentParser((peft.PromptTuningConfig)).parse_args_into_dataclasses()
-arg_parser = transformers.HfArgumentParser((transformers.TrainingArguments))
-aaa = arg_parser.parse_args_into_dataclasses()
 
-print(aaa)
+# # a_args = transformers.HfArgumentParser((peft.PromptTuningConfig)).parse_args_into_dataclasses()
+# arg_parser = transformers.HfArgumentParser((transformers.TrainingArguments))
+# aaa = arg_parser.parse_args_into_dataclasses()
+
+# print(aaa)
+
+
+parser = transformers.HfArgumentParser((peft.LoraConfig))
+if len(sys.argv) == 2 and sys.argv[1].endswith(".json"):
+    model_args, data_args, training_args = parser.parse_json_file(
+        json_file=os.path.abspath(sys.argv[1]))
+else:
+    peft_args = parser.parse_args_into_dataclasses()
