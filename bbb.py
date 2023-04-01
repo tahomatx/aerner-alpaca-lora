@@ -21,7 +21,7 @@ class PeftArguments:
 #     pass
 
 # a_args = transformers.HfArgumentParser((peft.PromptTuningConfig)).parse_args_into_dataclasses()
-arg_parser = transformers.HfArgumentParser((transformers.TrainingArgument))
+arg_parser = transformers.HfArgumentParser((transformers.TrainingArguments))
 aaa = arg_parser.parse_args_into_dataclasses()
 
 print(aaa)
