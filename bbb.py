@@ -5,6 +5,15 @@ import datasets
 from dataclasses import dataclass, field
 
 
+@dataclass
+class PeftArguments:
+    peft_type: str = field()
+    r: int = field()
+    lora_alpha: int = field(),
+    lora_dropout: float = field(),
+    # Used for prompt tuning, prefix tuning and p-tuning
+    num_virtual_tokens: int = field()
+    mapping_hidden_dim: int = field()
 
 @dataclass
 class PeftArguments(peft.LoraConfig, peft.PromptTuningConfig):
