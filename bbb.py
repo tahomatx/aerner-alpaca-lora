@@ -8,13 +8,13 @@ from typing import Optional
 
 @dataclass
 class PeftArguments:
-    peft_type: str = field()
-    r: dataclass[int] = field()
-    lora_alpha: dataclass[int] = field()
-    lora_dropout: dataclass[float] = field()
+    peft_type: str
+    r: dataclass[int]
+    lora_alpha: dataclass[int]
+    lora_dropout: dataclass[float]
     # Used for prompt tuning, prefix tuning and p-tuning
-    num_virtual_tokens: dataclass[int] = field()
-    mapping_hidden_dim: dataclass[int] = field()
+    num_virtual_tokens: dataclass[int]
+    mapping_hidden_dim: dataclass[int]
 
 # @dataclass
 # class PeftArguments(peft.LoraConfig, peft.PromptTuningConfig):
