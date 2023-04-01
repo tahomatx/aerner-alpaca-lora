@@ -1,12 +1,7 @@
 # pip uninstall -y transformers && pip install -q git+https://github.com/huggingface/transformers.git git+https://github.com/huggingface/peft.git bitsandbytes datasets accelerate sentencepiece wandb fire
 
 
-from peft import (
-    prepare_model_for_int8_training,
-    LoraConfig,
-    get_peft_model,
-    get_peft_model_state_dict,
-)
+import peft
 from transformers import AutoConfig, LlamaForCausalLM, LlamaTokenizer
 import tqdm.auto as tqdm
 import os
@@ -15,14 +10,8 @@ from typing import List
 
 import fire
 import torch
-import torch.nn as nn
-import bitsandbytes as bnb
 import transformers
 import datasets
-import math
-from torch.nn import CrossEntropyLoss
-
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union
 
 assert (
     "LlamaTokenizer" in transformers._import_structure["models.llama"]
@@ -84,6 +73,7 @@ def train(
         f"train_on_inputs: {train_on_inputs}\n"
         f"group_by_length: {group_by_length}\n"
         f"resume_from_checkpoint: {resume_from_checkpoint}\n"
+        f"warmup_steps: {warmup_steps}\n"
     )
     assert (
         base_model
@@ -167,7 +157,7 @@ def train(
         device_map='auto',
     )
 
-    model = prepare_model_for_int8_training(model)
+    model = peft.prepare_model_for_int8_training(model)
     model.gradient_checkpointing_enable()
     model.enable_input_require_grads()
     # silence the warnings. Please re-enable for inference!
@@ -178,7 +168,7 @@ def train(
     # Apply LoRA
     #
     #
-    config = LoraConfig(
+    config = peft.LoraConfig(
         r=lora_r,
         lora_alpha=lora_alpha,
         target_modules=lora_target_modules,
@@ -186,7 +176,9 @@ def train(
         bias="none",
         task_type="CAUSAL_LM",
     )
-    model = get_peft_model(model, config)
+    model = peft.get_peft_model(model, config)
+
+    model.print_trainable_parameters()
 
     #
     # Initial save
@@ -243,7 +235,7 @@ def train(
     old_state_dict = model.state_dict
     model.state_dict = (
         lambda self, *
-        _, **__: get_peft_model_state_dict(self, old_state_dict())
+        _, **__: peft.get_peft_model_state_dict(self, old_state_dict())
     ).__get__(model, type(model))
 
     if torch.__version__ >= "2" and sys.platform != "win32":
