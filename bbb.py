@@ -15,9 +15,9 @@ class PeftArguments:
     num_virtual_tokens: int = field()
     mapping_hidden_dim: int = field()
 
-@dataclass
-class PeftArguments(peft.LoraConfig, peft.PromptTuningConfig):
-    pass
+# @dataclass
+# class PeftArguments(peft.LoraConfig, peft.PromptTuningConfig):
+#     pass
 
 # a_args = transformers.HfArgumentParser((peft.PromptTuningConfig)).parse_args_into_dataclasses()
 arg_parser = transformers.HfArgumentParser((PeftArguments))
