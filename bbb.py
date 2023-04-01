@@ -3,7 +3,7 @@ import transformers
 import peft
 
 
-a_args = transformers.HfArgumentParser((peft.PromptTuningConfig)).parse_args_into_dataclasses()
+# a_args = transformers.HfArgumentParser((peft.PromptTuningConfig)).parse_args_into_dataclasses()
 b_args = transformers.HfArgumentParser((peft.LoraConfig)).parse_args_into_dataclasses()
 
-print(a_args, b_args)
+print(b_args)
