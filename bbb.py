@@ -9,12 +9,12 @@ from typing import Optional
 @dataclass
 class PeftArguments:
     peft_type: str
-    r: dataclass[int]
-    lora_alpha: dataclass[int]
-    lora_dropout: dataclass[float]
+    r: Optional[int]
+    lora_alpha: Optional[int]
+    lora_dropout: Optional[float]
     # Used for prompt tuning, prefix tuning and p-tuning
-    num_virtual_tokens: dataclass[int]
-    mapping_hidden_dim: dataclass[int]
+    num_virtual_tokens: Optional[int]
+    mapping_hidden_dim: Optional[int]
 
 # @dataclass
 # class PeftArguments(peft.LoraConfig, peft.PromptTuningConfig):
